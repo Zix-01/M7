@@ -29,6 +29,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'materials',
     'users',
     'rest_framework',
     'django.contrib.admin',
@@ -75,7 +76,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'M7',
+        'NAME': 'm7',
         'USER': 'postgres',
         'PASSWORD': '123',
         'HOST': 'localhost',
