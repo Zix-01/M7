@@ -1,0 +1,49 @@
+# Python
+.pyc
+.pyo
+__pycache__
+.pytest_cache
+.mypy_cache
+.coverage
+
+# Django
+.DS_Store
+db.sqlite3
+local_settings.py
+manage.py.swp
+
+# Virtual environment
+venv/
+.env
+.venv
+env/
+.tox
+.eggs
+pip-log.txt
+pip-delete-this-directory.txt
+.coverage*
+
+# Test files
+tests/
+
+# IDE-specific files
+.idea
+.vscode
+.project
+
+# Other
+.log
+.out
+.bak
+.pyi
+.swp
+.svn
+
+# Files that may be created by Django
+.crt
+.key
+.pem
+.p12
+.sqlite3
+.db
+.ini
