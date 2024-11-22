@@ -24,5 +24,5 @@ class LessonAmountSerializer(ModelSerializer):
         return Lesson.objects.filter(lesson=course.lesson).count()
 
     class Meta:
-        model = Course
+        model = Lesson
         fields = ('name', 'description', 'lessons_amount', 'lessons')

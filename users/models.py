@@ -27,7 +27,7 @@ class User(AbstractUser):
 
 
 class Payments(models.Model):
-    payment_choice = [
+    payment_choices = [
         ('Cash', "наличные"),
         ('Transfer', "перевод"),
     ]
@@ -47,7 +47,7 @@ class Payments(models.Model):
         verbose_name='Оплаченный курс',
         blank=True,
         null=True,
-        related_name='paid_course'
+        related_name='payments'
     )
     paid_lesson = models.ForeignKey(
         Lesson,
@@ -55,7 +55,7 @@ class Payments(models.Model):
         verbose_name='Оплаченный урок',
         blank=True,
         null=True,
-        related_name='paid_lesson'
+        related_name='payments'
     )
     amount = models.DecimalField(
         max_digits=10,
@@ -63,7 +63,7 @@ class Payments(models.Model):
     )
     payment_type = models.CharField(
         max_length=50,
-        choices=payment_choice,
+        choices=payment_choices,
         verbose_name='тип оплаты'
     )
 
