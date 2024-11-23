@@ -7,6 +7,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView, DestroyAPIView
 
 from materials.models import Course, Lesson, Subscription
+from materials.paginators import CustomPagination
 from materials.serializers import CourseSerializer, LessonSerializer, LessonAmountSerializer
 from users.permissions import IsModerator, IsOwner
 
@@ -15,6 +16,7 @@ class CourseViewSet(ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer()
     filterset_fields = ('date',)
+    pagination_class = CustomPagination
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -39,6 +41,7 @@ class CourseViewSet(ModelViewSet):
 class CourseListView(ListAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+    pagination_class = CustomPagination
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -50,6 +53,7 @@ class LessonCreateApiView(CreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = (~IsModerator, IsAuthenticated,)
+    pagination_class = CustomPagination
 
     def perform_create(self, serializer):
         lesson = serializer.save()
@@ -60,21 +64,25 @@ class LessonCreateApiView(CreateAPIView):
 class LessonListAPIView(ListAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    pagination_class = CustomPagination
 
 
 class LessonRetrieveAPIView(RetrieveAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    pagination_class = CustomPagination
 
 
 class LessonUpdateAPIView(UpdateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    pagination_class = CustomPagination
 
 
 class LessonDestroyAPIView(DestroyAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    pagination_class = CustomPagination
 
 
 class SubscriptionView(APIView):
@@ -84,6 +92,7 @@ class SubscriptionView(APIView):
         user = request.user
         course_id = request.data.get('course_id')
         course_item = get_object_or_404(Course, id=course_id)
+        pagination_class = CustomPagination
 
         # Проверяем наличие подписки
         subs_item = Subscription.objects.filter(user=user, course=course_item)
