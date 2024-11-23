@@ -40,7 +40,7 @@ class LessonCreateApiView(CreateAPIView):
     def perform_create(self, serializer):
         lesson = serializer.save()
         lesson.owner = self.request.user
-        lessonll.save()
+        lesson.save()
 
 
 class LessonListAPIView(ListAPIView):

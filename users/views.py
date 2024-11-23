@@ -29,14 +29,15 @@ class UserUpdateAPIView(UpdateAPIView):
 
 
 class PaymentListAPIView(ListAPIView):
-    queryset = Payments.objects.all()
     serializer_class = PaymentSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ('paid_lesson', 'paid_course', 'payment_type',)
     ordering_fields = ('date',)
 
+    def get_queryset(self):
+        return Payments.objects.filter(owner=self.request.user)
+
 
 class PaymentCreateAPIView(CreateAPIView):
     queryset = Payments.objects.all()
     serializer_class = PaymentSerializer
-
