@@ -33,6 +33,13 @@ class Lesson(models.Model):
         verbose_name_plural = 'Уроки'
         ordering = ['name', 'description', 'image', 'video_url']
 
-
     def __str__(self):
         return self.name
+
+
+class Subscription(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'course')
