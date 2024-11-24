@@ -3,57 +3,30 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView, DestroyAPIView
 
 from materials.models import Course, Lesson, Subscription
 from materials.paginators import CustomPagination
-from materials.serializers import CourseSerializer, LessonSerializer, LessonAmountSerializer
+from materials.serializers import CourseSerializer, LessonSerializer
 from users.permissions import IsModerator, IsOwner
-
-
-class CourseViewSet(ModelViewSet):
-    queryset = Course.objects.all()
-    serializer_class = CourseSerializer()
-    filterset_fields = ('date',)
-    pagination_class = CustomPagination
-
-    def get_serializer_class(self):
-        if self.action == 'retrieve':
-            return LessonAmountSerializer
-        return CourseViewSet
-
-    def perform_create(self, serializer):
-        course = serializer.save()
-        course.owner = self.request.user
-        course.save()
-
-    def get_permissions(self):
-        if self.action == "create":
-            self.permission_classes = (~IsModerator,)
-        elif self.action in ["update", "retrieve", "list"]:
-            self.permission_classes = (IsModerator | IsOwner,)
-        elif self.action == "destroy":
-            self.permission_classes = (~IsModerator | IsOwner,)
-        return super().get_permissions()
 
 
 class CourseListView(ListAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     pagination_class = CustomPagination
+    permission_classes = (IsAuthenticated,)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context['request'] = self.request  # Контекст с запросом для сериализатора
+        context['request'] = self.request
         return context
 
 
 class LessonCreateApiView(CreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = (~IsModerator, IsAuthenticated,)
-    pagination_class = CustomPagination
+    permission_classes = (IsAuthenticated, ~IsModerator,)  # IsAuthenticated первым
 
     def perform_create(self, serializer):
         lesson = serializer.save()
@@ -62,37 +35,44 @@ class LessonCreateApiView(CreateAPIView):
 
 
 class LessonListAPIView(ListAPIView):
-    queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    pagination_class = CustomPagination
+    permission_classes = (IsAuthenticated,)  # Доступ к объектам только для аутентифицированных пользователей
+
+    def get_queryset(self):
+        return Lesson.objects.filter(owner=self.request.user)  # Фильтрация по владельцу
 
 
 class LessonRetrieveAPIView(RetrieveAPIView):
-    queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    pagination_class = CustomPagination
+    permission_classes = (IsAuthenticated,)  # Доступ только для аутентифицированных пользователей
+
+    def get_queryset(self):
+        return Lesson.objects.filter(owner=self.request.user)  # Фильтрация по владельцу
 
 
 class LessonUpdateAPIView(UpdateAPIView):
-    queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    pagination_class = CustomPagination
+    permission_classes = (IsAuthenticated, IsModerator | IsOwner,)  # IsAuthenticated первым
+
+    def get_queryset(self):
+        return Lesson.objects.filter(owner=self.request.user)  # Фильтрация по владельцу
 
 
 class LessonDestroyAPIView(DestroyAPIView):
-    queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    pagination_class = CustomPagination
+    permission_classes = (IsAuthenticated, ~IsModerator | IsOwner,)  # IsAuthenticated первым
+
+    def get_queryset(self):
+        return Lesson.objects.filter(owner=self.request.user)  # Фильтрация по владельцу
 
 
 class SubscriptionView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         user = request.user
         course_id = request.data.get('course_id')
         course_item = get_object_or_404(Course, id=course_id)
-        pagination_class = CustomPagination
 
         # Проверяем наличие подписки
         subs_item = Subscription.objects.filter(user=user, course=course_item)
