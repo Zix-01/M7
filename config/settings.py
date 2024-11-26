@@ -2,6 +2,9 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from celery.schedules import crontab
+from django.core.mail.backends import smtp
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-r9@wm9hhnl0j_j&&o9=*o@&ot(55ge74%zzrr!&_(&xwillywq'
@@ -151,3 +154,30 @@ SIMPLE_JWT = {
 STRIPE_TEST_PUBLIC_KEY = os.getenv('STRIPE_TEST_PUBLIC_KEY', 'sk_test_51QPDKfJDSkFqqzU94ZvxXMNqPPSCYvqifL4PmmiAM08Lw4gg4Y9sHYov7LLSpQ5OXv0mnXB4PCxiNyIMqrTXrc8u00opKzGGYt')
 STRIPE_TEST_SECRET_KEY = os.getenv('STRIPE_TEST_SECRET_KEY', 'pk_test_51QPDKfJDSkFqqzU9CsSs1NAlyEfmAp0NIv7Brb7ewJbZunJSyIqIXAPT13xHOb26px988HcdsRETeerSvbqVeTm100JtTgv93F')
 
+CELERY_BROKER_URL = 'redis://localhost:6379' # Например, Redis, который по умолчанию работает на порту 6379
+
+# URL-адрес брокера результатов, также Redis
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+
+# Часовой пояс для работы Celery
+CELERY_TIMEZONE = "Australia/Tasmania"
+
+# Флаг отслеживания выполнения задач
+CELERY_TASK_TRACK_STARTED = True
+
+# Максимальное время на выполнение задачи
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
+CELERY_BEAT_SCHEDULE = {
+    'block-inactive-users-every-day': {
+        'task': 'materials.tasks.block_inactive_users',
+        'schedule': crontab(hour=0, minute=0),
+    },
+}
+
+EMAIL_HOST: 'smtp.yandex.ru'
+EMAIL_PORT: 465
+EMAIL_HOST_USER: 'koteika.koteevitch@yandex.ru'
+EMAIL_HOST_PASSWORD: 'yhmqejdprtxdiiyp'
+EMAIL_USE_TLS: False
+EMAIL_USE_SSL: True

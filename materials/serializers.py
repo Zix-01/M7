@@ -38,3 +38,9 @@ class LessonAmountSerializer(ModelSerializer):
     class Meta:
         model = Lesson
         fields = ('name', 'description', 'lessons_amount', 'lessons')
+
+
+class SubscriptionSerializer(ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = '__all__'

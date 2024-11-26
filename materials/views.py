@@ -8,7 +8,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from materials.models import Course, Lesson, Subscription
 from materials.paginators import CustomPagination
-from materials.serializers import CourseSerializer, LessonSerializer
+from materials.serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer
 from users.permissions import IsModerator, IsOwner
 import requests
 
@@ -65,27 +65,23 @@ class LessonDestroyAPIView(DestroyAPIView):
     permission_classes = (IsAuthenticated, ~IsModerator | IsOwner,)  # IsAuthenticated первым
 
     def get_queryset(self):
-        return Lesson.objects.filter(owner=self.request.user)  # Фильтрация по владельцу
+        return Lesson.objects.filter(owner=self.request.user)
 
 
-class SubscriptionView(APIView):
+class SubscriptionCreateAPIView(CreateAPIView):
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
-        user = request.user
-        course_id = request.data.get('course_id')
-        course_item = get_object_or_404(Course, id=course_id)
-
-        # Проверяем наличие подписки
-        subs_item = Subscription.objects.filter(user=user, course=course_item)
-
+        user = self.request.user
+        course_id = request.data.get('course')
+        course = get_object_or_404(Course, pk=course_id)
+        subs_item = Subscription.objects.filter(user=user, course=course)
         if subs_item.exists():
-            # Если подписка существует, удаляем ее
             subs_item.delete()
             message = 'Подписка удалена'
         else:
-            # Если подписки нет, создаем ее
-            Subscription.objects.create(user=user, course=course_item)
+            Subscription.objects.create(user=user, course=course, sign_up=True)
             message = 'Подписка добавлена'
-
-        return Response({"message": message}, status=status.HTTP_200_OK)
+        return Response({'message': message})
