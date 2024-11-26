@@ -1,3 +1,4 @@
+import os
 from datetime import timedelta
 from pathlib import Path
 
@@ -21,6 +22,8 @@ INSTALLED_APPS = [
     'materials',
     'users',
     'rest_framework',
+    'drf_yasg',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -31,7 +34,20 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware'
 ]
+
+# settings.py
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",  # Замените на адрес вашего фронтенда
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8000",  # Замените на адрес вашего фронтенда
+]
+
+CORS_ALLOW_ALL_ORIGINS = False
 
 ROOT_URLCONF = 'config.urls'
 
@@ -122,12 +138,16 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-            'rest_framework.permissions.IsAuthenticated',
-        ]
+        'rest_framework.permissions.IsAuthenticated',
+    ]
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
+
+
+STRIPE_TEST_PUBLIC_KEY = os.getenv('STRIPE_TEST_PUBLIC_KEY', 'sk_test_51QPDKfJDSkFqqzU94ZvxXMNqPPSCYvqifL4PmmiAM08Lw4gg4Y9sHYov7LLSpQ5OXv0mnXB4PCxiNyIMqrTXrc8u00opKzGGYt')
+STRIPE_TEST_SECRET_KEY = os.getenv('STRIPE_TEST_SECRET_KEY', 'pk_test_51QPDKfJDSkFqqzU9CsSs1NAlyEfmAp0NIv7Brb7ewJbZunJSyIqIXAPT13xHOb26px988HcdsRETeerSvbqVeTm100JtTgv93F')
 

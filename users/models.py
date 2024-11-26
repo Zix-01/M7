@@ -67,6 +67,9 @@ class Payments(models.Model):
         verbose_name='тип оплаты'
     )
 
+    stripe_session_id = models.CharField(max_length=255)
+    payment_status = models.CharField(max_length=50, default='pending')  # или 'completed', 'failed'
+
     class Meta:
         verbose_name = "Платеж"
         verbose_name_plural = "Платежи"
