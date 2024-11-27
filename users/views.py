@@ -1,14 +1,14 @@
 import stripe
+from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import AllowAny
 
-from users.models import Payments, User
+from users.models import User
 from users.serializers import PaymentSerializer, UserSerializer
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .services import create_product, create_price, create_checkout_session
 from .models import Payments
 
 
@@ -46,29 +46,27 @@ class PaymentListAPIView(ListAPIView):
 class PaymentCreateAPIView(CreateAPIView):
     queryset = Payments.objects.all()
     serializer_class = PaymentSerializer
+    permission_classes = (AllowAny,)
 
-    @api_view(['POST'])
-    def create_payment(request):
-        product_name = request.data.get('product_name')
-        amount = request.data.get('amount')  # Сумма в рублях
+    def perform_create(self, serializer):
+        data = self.request.data
 
-        # Создание продукта и цены в Stripe
-        product = create_product(product_name)
-        price = create_price(product.id, amount * 100)  # Умножаем на 100 для копеек
+        if 'amount' not in data or 'currency' not in data or 'payment_method_id' not in data:
+            raise ValidationError("Отсутствует необходимая платежная информация.")
 
-        # Создание сессии для оплаты
-        session = create_checkout_session(price.id)
+        try:
+            payment_intent = stripe.PaymentIntent.create(
+                amount=data['amount'],
+                currency=data['currency'],
+                payment_method=data['payment_method_id'],
+                confirmation_method='manual',
+                confirm=True,
+            )
+            payment = serializer.save(owner=self.request.user, stripe_payment_intent_id=payment_intent.id)
 
-        # Сохранение информации о платеже в базе данных
-        payment = Payments.objects.create(
-            product_name=product_name,
-            amount=amount * 100,
-            stripe_session_id=session.id,
-        )
+            return Response({'payment_id': payment.id}, status=status.HTTP_201_CREATED)
 
-        return Response({'payment_link': session.url})
-
-    @api_view(['GET'])
-    def get_payment_status(request, session_id):
-        session = stripe.checkout.Session.retrieve(session_id)
-        return Response({'status': session.payment_status})
+        except stripe.error.CardError as e:
+            raise ValidationError(f"Недопустимая информация о карте: {str(e)}")
+        except Exception as e:
+            raise ValidationError(f"Ошибка платежа: {str(e)}")
