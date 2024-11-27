@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgres://user:password@db:5432/mydatabase        # Настройки БД
+      - REDIS_URL=redis://redis:6379/                                    # Настройки Redis
+
+  db:                                                         # DB
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+
+  redis:                                                      # Redis
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  celery:                                                     # Celery
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A myproject worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - web
+      - redis
+    environment:
+      - DATABASE_URL=postgres://user:1234@db:5432/m7    # DB
+      - REDIS_URL=redis://redis:6379/                   # Redis
