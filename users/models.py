@@ -1,3 +1,4 @@
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -67,8 +68,10 @@ class Payments(models.Model):
         verbose_name='тип оплаты'
     )
 
-    stripe_session_id = models.CharField(max_length=255)
-    payment_status = models.CharField(max_length=50, default='pending')  # или 'completed', 'failed'
+    stripe_session_id = models.CharField(max_length=255, null=True, blank=True)
+    payment_status = models.CharField(max_length=50, default='pending')
+    payment_url = models.URLField(max_length=450, verbose_name="Ссылка на оплату", null=True, blank=True)
+    session_id = models.CharField(max_length=255, verbose_name="ID сессии", null=True, blank=True)
 
     class Meta:
         verbose_name = "Платеж"

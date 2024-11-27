@@ -1,14 +1,9 @@
-import stripe
-from rest_framework import status
-from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import AllowAny
-
 from users.models import User
 from users.serializers import PaymentSerializer, UserSerializer
-from rest_framework.response import Response
 from .models import Payments
 from .services import create_stripe_session, create_stripe_product, create_stripe_price
 
@@ -50,27 +45,17 @@ class PaymentCreateAPIView(CreateAPIView):
     permission_classes = (AllowAny,)
 
     def perform_create(self, serializer):
-        # Из сериализатора, а не request
-        validated_data = serializer.validated_data
+        # через сериализатор, а не queryset
+        payment = serializer.save()
 
-        try:
-            # Создаем продукт
-            product = create_stripe_product(validated_data)
+        # Передача пользователя в сериализатор
+        payment = serializer.save(user=self.request.user)
+        stripe_product_id = create_stripe_product(payment)
+        price = create_stripe_price(
+            stripe_product_id=stripe_product_id, amount=payment.amount
+        )
+        session_id, payment_link = create_stripe_session(price=price)
+        payment.stripe_session_id = session_id
+        payment.payment_url = payment_link
+        payment.save()
 
-            # Создаем цену
-            price = create_stripe_price(product.id, validated_data)
-
-            # Создаем сессию
-            session = create_stripe_session(price.id, validated_data)
-
-            payment = serializer.save(
-                owner=self.request.user,
-                stripe_payment_intent_id=session.id,
-                amount=validated_data['amount'],
-                payment_type=validated_data['payment_type']
-            )
-
-            return Response({'payment_id': payment.id, 'session_url': session.url}, status=status.HTTP_201_CREATED)
-
-        except Exception as e:
-            raise ValidationError(f"Ошибка при создании платежа: {str(e)}")
