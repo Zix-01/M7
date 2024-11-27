@@ -51,7 +51,7 @@ class PaymentCreateAPIView(CreateAPIView):
     def perform_create(self, serializer):
         data = self.request.data
 
-        if 'amount' not in data or 'currency' not in data or 'payment_method_id' not in data:
+        if 'amount' not in data or 'payment_type' not in data:
             raise ValidationError("Отсутствует необходимая платежная информация.")
 
         try:
