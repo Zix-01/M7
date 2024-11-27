@@ -10,6 +10,7 @@ from users.models import User
 from users.serializers import PaymentSerializer, UserSerializer
 from rest_framework.response import Response
 from .models import Payments
+from .services import create_stripe_session, create_stripe_product, create_stripe_price
 
 
 class UserCreateAPIView(CreateAPIView):
@@ -49,24 +50,27 @@ class PaymentCreateAPIView(CreateAPIView):
     permission_classes = (AllowAny,)
 
     def perform_create(self, serializer):
-        data = self.request.data
-
-        if 'amount' not in data or 'payment_type' not in data:
-            raise ValidationError("Отсутствует необходимая платежная информация.")
+        # Из сериализатора, а не request
+        validated_data = serializer.validated_data
 
         try:
-            payment_intent = stripe.PaymentIntent.create(
-                amount=data['amount'],
-                currency=data['currency'],
-                payment_method=data['payment_method_id'],
-                confirmation_method='manual',
-                confirm=True,
+            # Создаем продукт
+            product = create_stripe_product(validated_data)
+
+            # Создаем цену
+            price = create_stripe_price(product.id, validated_data)
+
+            # Создаем сессию
+            session = create_stripe_session(price.id, validated_data)
+
+            payment = serializer.save(
+                owner=self.request.user,
+                stripe_payment_intent_id=session.id,
+                amount=validated_data['amount'],
+                payment_type=validated_data['payment_type']
             )
-            payment = serializer.save(owner=self.request.user, stripe_payment_intent_id=payment_intent.id)
 
-            return Response({'payment_id': payment.id}, status=status.HTTP_201_CREATED)
+            return Response({'payment_id': payment.id, 'session_url': session.url}, status=status.HTTP_201_CREATED)
 
-        except stripe.error.CardError as e:
-            raise ValidationError(f"Недопустимая информация о карте: {str(e)}")
         except Exception as e:
-            raise ValidationError(f"Ошибка платежа: {str(e)}")
+            raise ValidationError(f"Ошибка при создании платежа: {str(e)}")
